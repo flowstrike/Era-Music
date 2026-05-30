@@ -18,10 +18,12 @@ import com.spyou.eramusic.data.db.SpotifyPlaylistEntity
 import com.spyou.eramusic.data.download.DownloadProgress
 import com.spyou.eramusic.data.download.SyncOrchestrator
 import com.spyou.eramusic.data.download.SyncWorker
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
 
 class DownloadViewModel(
@@ -59,7 +61,9 @@ class DownloadViewModel(
 
     fun startSync() {
         viewModelScope.launch {
-            syncOrchestrator.syncAll()
+            withContext(Dispatchers.IO) {
+                syncOrchestrator.syncAll()
+            }
             settingsStore.setDownloadsInitialized(true)
             settingsStore.setLastSyncTime(System.currentTimeMillis())
         }
