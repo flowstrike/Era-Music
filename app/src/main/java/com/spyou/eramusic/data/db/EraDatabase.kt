@@ -4,16 +4,24 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Playlist::class, PlaylistSong::class],
-    version = 1,
+    entities = [
+        Playlist::class,
+        PlaylistSong::class,
+        SpotifyPlaylistEntity::class,
+        DownloadedTrackEntity::class,
+        PlaylistTrackCrossRef::class,
+    ],
+    version = 2,
     exportSchema = true,
 )
 abstract class EraDatabase : RoomDatabase() {
 
     abstract fun playlistDao(): PlaylistDao
+    abstract fun downloadDao(): DownloadDao
 
     companion object {
         @Volatile
@@ -23,14 +31,51 @@ abstract class EraDatabase : RoomDatabase() {
             instance ?: build(context).also { instance = it }
         }
 
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `spotify_playlists` (
+                        `spotifyId` TEXT NOT NULL,
+                        `name` TEXT NOT NULL,
+                        `description` TEXT,
+                        `artworkUrl` TEXT,
+                        `trackCount` INTEGER NOT NULL,
+                        `lastSyncedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`spotifyId`)
+                    )
+                """)
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `downloaded_tracks` (
+                        `spotifyId` TEXT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `artist` TEXT NOT NULL,
+                        `album` TEXT NOT NULL,
+                        `durationMs` INTEGER NOT NULL,
+                        `localFilePath` TEXT NOT NULL,
+                        `artworkUrl` TEXT,
+                        `downloadStatus` TEXT NOT NULL,
+                        `downloadedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`spotifyId`)
+                    )
+                """)
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `playlist_track_cross_ref` (
+                        `spotifyPlaylistId` TEXT NOT NULL,
+                        `spotifyTrackId` TEXT NOT NULL,
+                        PRIMARY KEY(`spotifyPlaylistId`, `spotifyTrackId`)
+                    )
+                """)
+            }
+        }
+
         private fun build(context: Context): EraDatabase =
             Room.databaseBuilder(context.applicationContext, EraDatabase::class.java, "era.db")
                 .addCallback(object : RoomDatabase.Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) {
-                        // Seed the reserved Favorites playlist.
                         db.execSQL("INSERT INTO playlists (name, isFavorites) VALUES ('Favorites', 1)")
                     }
                 })
+                .addMigrations(MIGRATION_1_2)
                 .build()
     }
 }
