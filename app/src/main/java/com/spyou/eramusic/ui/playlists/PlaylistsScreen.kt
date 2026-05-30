@@ -7,10 +7,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.CloudDone
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.QueueMusic
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -24,13 +26,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.spyou.eramusic.data.db.SpotifyPlaylistEntity
 import com.spyou.eramusic.ui.components.NameDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistsScreen(
     viewModel: PlaylistsViewModel,
+    syncedPlaylists: List<SpotifyPlaylistEntity>,
     onOpenPlaylist: (Long) -> Unit,
+    onOpenSyncedPlaylist: (String, String) -> Unit,
 ) {
     val playlists by viewModel.playlists.collectAsStateWithLifecycle()
     var showCreate by remember { mutableStateOf(false) }
@@ -44,6 +49,40 @@ fun PlaylistsScreen(
         },
     ) { innerPadding ->
         LazyColumn(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            if (syncedPlaylists.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Synced from Spotify",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
+                items(syncedPlaylists, key = { "synced_${it.spotifyId}" }) { playlist ->
+                    ListItem(
+                        headlineContent = { Text(playlist.name) },
+                        supportingContent = {
+                            Text(
+                                "${playlist.trackCount} songs",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        },
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Rounded.CloudDone,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        },
+                        modifier = Modifier.clickable {
+                            onOpenSyncedPlaylist(playlist.spotifyId, playlist.name)
+                        },
+                    )
+                }
+                item {
+                    HorizontalDivider()
+                }
+            }
             items(playlists, key = { it.id }) { playlist ->
                 ListItem(
                     headlineContent = { Text(playlist.name) },
