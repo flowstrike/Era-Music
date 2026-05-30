@@ -15,7 +15,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         DownloadedTrackEntity::class,
         PlaylistTrackCrossRef::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class EraDatabase : RoomDatabase() {
@@ -68,6 +68,12 @@ abstract class EraDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE downloaded_tracks ADD COLUMN isFavorite INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         private fun build(context: Context): EraDatabase =
             Room.databaseBuilder(context.applicationContext, EraDatabase::class.java, "era.db")
                 .addCallback(object : RoomDatabase.Callback() {
@@ -75,7 +81,7 @@ abstract class EraDatabase : RoomDatabase() {
                         db.execSQL("INSERT INTO playlists (name, isFavorites) VALUES ('Favorites', 1)")
                     }
                 })
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
     }
 }

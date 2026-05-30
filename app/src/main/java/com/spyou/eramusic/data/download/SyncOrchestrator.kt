@@ -1,6 +1,7 @@
 package com.spyou.eramusic.data.download
 
 import android.content.Context
+import android.util.Log
 import com.spyou.eramusic.data.db.DownloadedTrackEntity
 import com.spyou.eramusic.data.db.PlaylistTrackCrossRef
 import com.spyou.eramusic.data.db.SpotifyPlaylistEntity
@@ -22,6 +23,7 @@ class SyncOrchestrator(
     val progress: StateFlow<DownloadProgress> = _progress.asStateFlow()
 
     companion object {
+        private const val TAG = "SyncOrchestrator"
         val PLAYLIST_IDS = listOf(
             "2IqhvoGlZzmKQawiK8L6jA",
             "6s3PWOnScpZwBAXvcxpJFo",
@@ -30,6 +32,7 @@ class SyncOrchestrator(
     }
 
     suspend fun syncAll() {
+        Log.d(TAG, "syncAll() starting for ${PLAYLIST_IDS.size} playlists")
         _progress.value = DownloadProgress.Idle
         var totalDownloaded = 0
         var totalFailed = 0
@@ -37,9 +40,11 @@ class SyncOrchestrator(
         try {
             for ((index, playlistId) in PLAYLIST_IDS.withIndex()) {
                 val playlistNum = index + 1
+                Log.d(TAG, "Fetching playlist $playlistNum/$PLAYLIST_IDS.size: $playlistId")
                 _progress.value = DownloadProgress.Syncing(playlistNum, PLAYLIST_IDS.size)
 
                 val spotifyPlaylist = spotifyMetadataService.fetchPlaylist(playlistId)
+                Log.d(TAG, "Got playlist '${spotifyPlaylist.name}' with ${spotifyPlaylist.tracks.size} tracks")
 
                 downloadDao.upsertPlaylist(
                     SpotifyPlaylistEntity(
@@ -54,6 +59,7 @@ class SyncOrchestrator(
 
                 val existingTrackIds = downloadDao.trackIdsForPlaylist(playlistId).toSet()
                 val remoteTrackIds = spotifyPlaylist.tracks.map { it.id }.toSet()
+                Log.d(TAG, "Existing: ${existingTrackIds.size}, Remote: ${remoteTrackIds.size}, New: ${remoteTrackIds - existingTrackIds.size}")
 
                 val removedTrackIds = existingTrackIds - remoteTrackIds
                 for (trackId in removedTrackIds) {
@@ -70,6 +76,7 @@ class SyncOrchestrator(
 
                 val newTracks = spotifyPlaylist.tracks.filter { it.id !in existingTrackIds }
                 for ((trackIdx, track) in newTracks.withIndex()) {
+                    Log.d(TAG, "Downloading [${trackIdx + 1}/${newTracks.size}]: ${track.title} by ${track.artist}")
                     _progress.value = DownloadProgress.Downloading(
                         playlistIndex = playlistNum,
                         totalPlaylists = PLAYLIST_IDS.size,
@@ -112,14 +119,18 @@ class SyncOrchestrator(
                     if (success) {
                         downloadDao.updateStatus(track.id, "COMPLETE", System.currentTimeMillis())
                         totalDownloaded++
+                        Log.d(TAG, "SUCCESS: ${track.title} → ${file.absolutePath} (${file.length()} bytes)")
                     } else {
                         downloadDao.updateStatus(track.id, "FAILED", 0L)
                         totalFailed++
+                        Log.w(TAG, "FAILED: ${track.title}")
                     }
                 }
             }
+            Log.d(TAG, "syncAll complete: $totalDownloaded downloaded, $totalFailed failed")
             _progress.value = DownloadProgress.Complete(totalDownloaded, totalFailed)
         } catch (e: Exception) {
+            Log.e(TAG, "syncAll FAILED", e)
             _progress.value = DownloadProgress.Error(e.message ?: "Sync failed")
         }
     }

@@ -1,6 +1,5 @@
 package com.spyou.eramusic.ui.playlists
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -8,12 +7,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.CloudDone
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -21,17 +18,18 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.spyou.eramusic.data.db.DownloadDao
 import com.spyou.eramusic.data.playable.DownloadedTrack
 import com.spyou.eramusic.playback.PlayerConnection
-import com.spyou.eramusic.ui.components.Artwork
+import com.spyou.eramusic.ui.components.SongRow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
@@ -46,6 +44,7 @@ fun SyncedPlaylistDetailScreen(
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val trackIds by remember(playlistId) {
         downloadDao.observeTrackIdsForPlaylist(playlistId)
     }.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -68,6 +67,10 @@ fun SyncedPlaylistDetailScreen(
             }
         }
     }
+
+    val favoriteIds by remember {
+        downloadDao.observeFavoriteTrackIds()
+    }.collectAsStateWithLifecycle(initialValue = emptyList())
 
     Scaffold(
         topBar = {
@@ -107,53 +110,19 @@ fun SyncedPlaylistDetailScreen(
                     tracks,
                     key = { _, track -> track.spotifyId },
                 ) { index, track ->
-                    SyncedTrackRow(
-                        track = track,
+                    SongRow(
+                        song = track,
                         isCurrent = track.spotifyId == currentSongId,
+                        isFavorite = track.spotifyId in favoriteIds,
                         onClick = { playerConnection.setDownloadedQueue(tracks, index) },
+                        onToggleFavorite = {
+                            scope.launch {
+                                downloadDao.toggleFavorite(track.spotifyId)
+                            }
+                        },
                     )
                 }
             }
         }
     }
-}
-
-@Composable
-private fun SyncedTrackRow(
-    track: DownloadedTrack,
-    isCurrent: Boolean,
-    onClick: () -> Unit,
-) {
-    val accent = MaterialTheme.colorScheme.primary
-    ListItem(
-        modifier = Modifier.clickable(onClick = onClick),
-        leadingContent = {
-            Artwork(uri = track.trackArtworkUri, size = 50.dp)
-        },
-        headlineContent = {
-            Text(
-                text = track.title,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                color = if (isCurrent) accent else MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.bodyLarge,
-            )
-        },
-        supportingContent = {
-            Text(
-                text = track.artist,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        },
-        trailingContent = {
-            Icon(
-                Icons.Rounded.CloudDone,
-                contentDescription = "Synced",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(end = 4.dp),
-            )
-        },
-    )
 }

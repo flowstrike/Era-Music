@@ -14,4 +14,5 @@ data class DownloadedTrackEntity(
     val artworkUrl: String?,
     val downloadStatus: String,
     val downloadedAt: Long,
+    val isFavorite: Boolean = false,
 )

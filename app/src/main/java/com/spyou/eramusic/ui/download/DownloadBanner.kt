@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.CloudDownload
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.FilledTonalButton
@@ -32,7 +33,7 @@ fun DownloadBanner(
 ) {
     val isVisible = when (progress) {
         is DownloadProgress.Idle -> false
-        is DownloadProgress.Complete -> false
+        is DownloadProgress.Complete -> true
         is DownloadProgress.Syncing -> true
         is DownloadProgress.Downloading -> true
         is DownloadProgress.Error -> true
@@ -47,7 +48,7 @@ fun DownloadBanner(
                 is DownloadProgress.Idle -> {}
                 is DownloadProgress.Syncing -> SyncingContent(progress, onDismiss)
                 is DownloadProgress.Downloading -> DownloadingContent(progress, onDismiss)
-                is DownloadProgress.Complete -> {}
+                is DownloadProgress.Complete -> CompleteContent(progress, onDismiss)
                 is DownloadProgress.Error -> ErrorContent(progress, onDismiss, onStartDownload)
             }
         }
@@ -126,6 +127,41 @@ private fun DownloadingContent(
             progress = { fraction },
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
         )
+    }
+}
+
+@Composable
+private fun CompleteContent(
+    progress: DownloadProgress.Complete,
+    onDismiss: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            Icons.Rounded.CheckCircle,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
+            Text(
+                text = "Download complete: ${progress.totalDownloaded} tracks",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            if (progress.totalFailed > 0) {
+                Text(
+                    text = "${progress.totalFailed} tracks failed",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        }
+        IconButton(onClick = onDismiss) {
+            Icon(Icons.Rounded.Close, contentDescription = "Dismiss")
+        }
     }
 }
 

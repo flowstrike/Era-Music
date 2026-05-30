@@ -76,13 +76,16 @@ fun EraNavHost() {
     val downloadProgress by downloadViewModel.progress.collectAsStateWithLifecycle()
     val syncedPlaylists by downloadViewModel.syncedPlaylists.collectAsStateWithLifecycle()
 
-    var showDownloadPrompt by remember { mutableStateOf(false) }
-    var showDownloadBanner by remember { mutableStateOf(false) }
+    var downloadPromptDismissed by remember { mutableStateOf(false) }
+    var downloadBannerDismissed by remember { mutableStateOf(false) }
 
-    LaunchedEffect(downloadsInitialized) {
-        if (!downloadsInitialized) {
-            showDownloadPrompt = true
-        }
+    val showDownloadPrompt = !downloadsInitialized
+            && !downloadPromptDismissed
+            && downloadProgress !is DownloadProgress.Syncing
+            && downloadProgress !is DownloadProgress.Downloading
+
+    val showDownloadProgressBanner = (!downloadBannerDismissed) && downloadProgress.let {
+        it is DownloadProgress.Syncing || it is DownloadProgress.Downloading || it is DownloadProgress.Error || it is DownloadProgress.Complete
     }
 
     val navController = rememberNavController()
@@ -95,21 +98,26 @@ fun EraNavHost() {
         bottomBar = {
             if (showBottomBar) {
                 Column {
-                    if (showDownloadPrompt && !downloadsInitialized) {
+                    if (showDownloadPrompt) {
                         DownloadPromptBanner(
                             onDownload = {
-                                showDownloadPrompt = false
-                                showDownloadBanner = true
+                                downloadPromptDismissed = true
+                                downloadBannerDismissed = false
                                 downloadViewModel.startSync()
                             },
-                            onDismiss = { showDownloadPrompt = false },
+                            onDismiss = {
+                                downloadPromptDismissed = true
+                            },
                         )
                     }
-                    if (showDownloadBanner) {
+                    if (showDownloadProgressBanner) {
                         DownloadBanner(
                             progress = downloadProgress,
-                            onDismiss = { showDownloadBanner = false },
-                            onStartDownload = { downloadViewModel.startSync() },
+                            onDismiss = { downloadBannerDismissed = true },
+                            onStartDownload = {
+                                downloadBannerDismissed = false
+                                downloadViewModel.startSync()
+                            },
                         )
                     }
                     MiniPlayer(

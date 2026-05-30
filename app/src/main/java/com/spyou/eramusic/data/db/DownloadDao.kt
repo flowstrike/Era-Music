@@ -50,4 +50,13 @@ interface DownloadDao {
 
     @Query("SELECT DISTINCT spotifyPlaylistId FROM playlist_track_cross_ref WHERE spotifyTrackId = :trackId")
     suspend fun playlistsForTrack(trackId: String): List<String>
+
+    @Query("UPDATE downloaded_tracks SET isFavorite = NOT isFavorite WHERE spotifyId = :id")
+    suspend fun toggleFavorite(id: String)
+
+    @Query("SELECT isFavorite FROM downloaded_tracks WHERE spotifyId = :id")
+    suspend fun isFavorite(id: String): Boolean?
+
+    @Query("SELECT spotifyId FROM downloaded_tracks WHERE isFavorite = 1")
+    fun observeFavoriteTrackIds(): Flow<List<String>>
 }

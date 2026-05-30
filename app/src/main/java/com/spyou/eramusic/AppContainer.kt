@@ -6,7 +6,6 @@ import com.spyou.eramusic.data.PlaylistRepository
 import com.spyou.eramusic.data.SettingsStore
 import com.spyou.eramusic.data.db.EraDatabase
 import com.spyou.eramusic.data.download.SyncOrchestrator
-import com.spyou.eramusic.data.spotify.SpotifyAuthService
 import com.spyou.eramusic.data.spotify.SpotifyMetadataService
 import com.spyou.eramusic.data.youtube.NewPipeDownloader
 import com.spyou.eramusic.data.youtube.YouTubeDownloadService
@@ -29,14 +28,8 @@ class AppContainer(context: Context) {
     val playerConnection: PlayerConnection by lazy { PlayerConnection(appContext) }
     val sleepTimer: SleepTimer by lazy { SleepTimer(appScope) }
 
-    private val spotifyAuthService: SpotifyAuthService by lazy {
-        SpotifyAuthService(
-            BuildConfig.SPOTIFY_CLIENT_ID,
-            BuildConfig.SPOTIFY_CLIENT_SECRET,
-        )
-    }
     private val spotifyMetadataService: SpotifyMetadataService by lazy {
-        SpotifyMetadataService(spotifyAuthService)
+        SpotifyMetadataService()
     }
     val youTubeDownloadService: YouTubeDownloadService by lazy {
         YouTubeDownloadService(appContext)

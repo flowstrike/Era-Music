@@ -49,7 +49,7 @@ class DownloadViewModel(
         24, TimeUnit.HOURS
     ).setConstraints(
         Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
-    ).build()
+    ).setInitialDelay(12, TimeUnit.HOURS).build()
 
     init {
         workManager.enqueueUniquePeriodicWork(
@@ -64,8 +64,11 @@ class DownloadViewModel(
             withContext(Dispatchers.IO) {
                 syncOrchestrator.syncAll()
             }
-            settingsStore.setDownloadsInitialized(true)
-            settingsStore.setLastSyncTime(System.currentTimeMillis())
+            val current = syncOrchestrator.progress.value
+            if (current is DownloadProgress.Complete) {
+                settingsStore.setDownloadsInitialized(true)
+                settingsStore.setLastSyncTime(System.currentTimeMillis())
+            }
         }
     }
 
