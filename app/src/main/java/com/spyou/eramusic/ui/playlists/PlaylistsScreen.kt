@@ -10,10 +10,12 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CloudDone
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.QueueMusic
+import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -37,12 +39,33 @@ fun PlaylistsScreen(
     syncedPlaylists: List<SpotifyPlaylistEntity>,
     onOpenPlaylist: (Long) -> Unit,
     onOpenSyncedPlaylist: (String, String) -> Unit,
+    onSyncSpotify: () -> Unit,
+    isSyncing: Boolean,
 ) {
     val playlists by viewModel.playlists.collectAsStateWithLifecycle()
     var showCreate by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Playlists") }) },
+        topBar = {
+            TopAppBar(
+                title = { Text("Playlists") },
+                actions = {
+                    if (syncedPlaylists.isNotEmpty()) {
+                        IconButton(
+                            onClick = onSyncSpotify,
+                            enabled = !isSyncing,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Sync,
+                                contentDescription = "Sync from Spotify",
+                                tint = if (isSyncing) MaterialTheme.colorScheme.onSurfaceVariant
+                                    else MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
+                },
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = { showCreate = true }) {
                 Icon(Icons.Rounded.Add, contentDescription = "New playlist")

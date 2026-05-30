@@ -162,6 +162,9 @@ fun EraNavHost() {
                     onOpenSyncedPlaylist = { id, name ->
                         navController.navigate(Routes.syncedPlaylistDetail(id, name))
                     },
+                    onSyncSpotify = { downloadViewModel.startSync() },
+                    isSyncing = downloadProgress is DownloadProgress.Syncing
+                            || downloadProgress is DownloadProgress.Downloading,
                 )
             }
             composable(
