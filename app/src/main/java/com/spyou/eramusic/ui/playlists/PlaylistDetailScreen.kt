@@ -44,7 +44,7 @@ import com.spyou.eramusic.ui.components.SongRow
 fun PlaylistDetailScreen(
     playlistId: Long,
     viewModel: PlaylistsViewModel,
-    currentSongId: Long?,
+    currentSongId: String?,
     onBack: () -> Unit,
 ) {
     val playlists by viewModel.playlists.collectAsStateWithLifecycle()
@@ -109,7 +109,7 @@ fun PlaylistDetailScreen(
                 itemsIndexed(songs, key = { _, song -> song.id }) { index, song ->
                     SongRow(
                         song = song,
-                        isCurrent = song.id == currentSongId,
+                        isCurrent = song.id.toString() == currentSongId,
                         onClick = { viewModel.play(songs, index) },
                         isFavorite = song.id in favoriteIds,
                         onToggleFavorite = { viewModel.toggleFavorite(song.id) },

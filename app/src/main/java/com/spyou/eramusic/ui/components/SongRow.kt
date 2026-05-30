@@ -27,7 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.spyou.eramusic.data.Song
+import com.spyou.eramusic.data.playable.PlayableTrack
 
 /** An action shown in a [SongRow] overflow menu. */
 data class RowAction(
@@ -43,7 +43,7 @@ data class RowAction(
  */
 @Composable
 fun SongRow(
-    song: Song,
+    song: PlayableTrack,
     isCurrent: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -57,10 +57,10 @@ fun SongRow(
     ListItem(
         modifier = modifier.clickable(onClick = onClick),
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        leadingContent = { Artwork(uri = song.albumArtUri, size = 50.dp) },
+        leadingContent = { Artwork(uri = song.trackArtworkUri, size = 50.dp) },
         headlineContent = {
             Text(
-                text = song.title,
+                text = song.trackTitle,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 color = if (isCurrent) accent else Color.Unspecified,
@@ -69,7 +69,7 @@ fun SongRow(
         },
         supportingContent = {
             Text(
-                text = song.artist,
+                text = song.trackArtist,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium,

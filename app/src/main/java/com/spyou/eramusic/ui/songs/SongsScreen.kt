@@ -46,7 +46,7 @@ import com.spyou.eramusic.ui.playlists.PlaylistsViewModel
 fun SongsScreen(
     libraryViewModel: LibraryViewModel,
     playlistsViewModel: PlaylistsViewModel,
-    currentSongId: Long?,
+    currentSongId: String?,
 ) {
     val songs by libraryViewModel.songs.collectAsStateWithLifecycle()
     val query by libraryViewModel.searchQuery.collectAsStateWithLifecycle()
@@ -127,7 +127,7 @@ fun SongsScreen(
                     itemsIndexed(songs, key = { _, song -> song.id }) { index, song ->
                         SongRow(
                             song = song,
-                            isCurrent = song.id == currentSongId,
+                            isCurrent = song.id.toString() == currentSongId,
                             onClick = { libraryViewModel.play(index) },
                             isFavorite = song.id in favoriteIds,
                             onToggleFavorite = { playlistsViewModel.toggleFavorite(song.id) },

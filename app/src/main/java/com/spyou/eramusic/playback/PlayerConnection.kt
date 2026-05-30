@@ -28,8 +28,8 @@ class PlayerConnection(context: Context) {
     private val scope = CoroutineScope(Dispatchers.Main)
     private var controller: MediaController? = null
 
-    private val _currentSongId = MutableStateFlow<Long?>(null)
-    val currentSongId: StateFlow<Long?> = _currentSongId.asStateFlow()
+    private val _currentSongId = MutableStateFlow<String?>(null)
+    val currentSongId: StateFlow<String?> = _currentSongId.asStateFlow()
 
     private val _title = MutableStateFlow("")
     val title: StateFlow<String> = _title.asStateFlow()
@@ -95,7 +95,7 @@ class PlayerConnection(context: Context) {
         _repeatMode.value = player.repeatMode
         val item = player.currentMediaItem
         _hasItem.value = item != null
-        _currentSongId.value = item?.mediaId?.toLongOrNull()
+        _currentSongId.value = item?.mediaId
         _title.value = item?.mediaMetadata?.title?.toString().orEmpty()
         _artist.value = item?.mediaMetadata?.artist?.toString().orEmpty()
         _artworkUri.value = item?.mediaMetadata?.artworkUri
@@ -143,6 +143,32 @@ class PlayerConnection(context: Context) {
     }
 
     fun stop() = controller?.stop() ?: Unit
+
+    fun setDownloadedQueue(tracks: List<com.spyou.eramusic.data.playable.DownloadedTrack>, startIndex: Int) {
+        val c = controller ?: return
+        if (tracks.isEmpty()) return
+        c.setMediaItems(
+            tracks.map { it.toDownloadedMediaItem() },
+            startIndex.coerceIn(tracks.indices),
+            0L,
+        )
+        c.prepare()
+        c.play()
+    }
+
+    private fun com.spyou.eramusic.data.playable.DownloadedTrack.toDownloadedMediaItem(): MediaItem =
+        MediaItem.Builder()
+            .setMediaId(spotifyId)
+            .setUri(android.net.Uri.fromFile(localFile))
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(title)
+                    .setArtist(artist)
+                    .setAlbumTitle(album)
+                    .setArtworkUri(artworkUrl?.let { android.net.Uri.parse(it) })
+                    .build()
+            )
+            .build()
 
     private fun Song.toMediaItem(): MediaItem =
         MediaItem.Builder()

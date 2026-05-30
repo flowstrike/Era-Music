@@ -55,7 +55,7 @@ import com.spyou.eramusic.ui.formatDuration
 fun NowPlayingScreen(
     player: PlayerConnection,
     sleepTimer: SleepTimer,
-    currentSongId: Long?,
+    currentSongId: String?,
     isFavorite: Boolean,
     onToggleFavorite: () -> Unit,
     onCollapse: () -> Unit,

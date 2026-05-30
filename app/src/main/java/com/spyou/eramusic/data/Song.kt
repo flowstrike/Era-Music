@@ -3,6 +3,7 @@ package com.spyou.eramusic.data
 import android.content.ContentUris
 import android.net.Uri
 import android.provider.MediaStore
+import com.spyou.eramusic.data.playable.PlayableTrack
 
 /**
  * A single audio track read from [MediaStore].
@@ -18,7 +19,7 @@ data class Song(
     val durationMs: Long,
     val albumId: Long,
     val dateAddedSec: Long,
-) {
+) : PlayableTrack {
     val uri: Uri
         get() = ContentUris.withAppendedId(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, id)
 
@@ -27,4 +28,9 @@ data class Song(
             Uri.parse("content://media/external/audio/albumart"),
             albumId,
         )
+
+    override val trackId: String get() = id.toString()
+    override val trackTitle: String get() = title
+    override val trackArtist: String get() = artist
+    override val trackArtworkUri: Uri? get() = albumArtUri
 }

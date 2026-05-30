@@ -128,8 +128,8 @@ fun EraNavHost() {
                     player = player,
                     sleepTimer = container.sleepTimer,
                     currentSongId = currentSongId,
-                    isFavorite = currentSongId != null && currentSongId in favoriteIds,
-                    onToggleFavorite = { currentSongId?.let { playlistsViewModel.toggleFavorite(it) } },
+                    isFavorite = currentSongId?.toLongOrNull()?.let { it in favoriteIds } == true,
+                    onToggleFavorite = { currentSongId?.toLongOrNull()?.let { playlistsViewModel.toggleFavorite(it) } },
                     onCollapse = { navController.popBackStack() },
                 )
             }
