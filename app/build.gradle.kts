@@ -4,6 +4,13 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+import java.util.Properties
+
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
 android {
     namespace = "com.spyou.eramusic"
     compileSdk {
@@ -21,8 +28,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"${property("spotify.client.id")}\"")
-        buildConfigField("String", "SPOTIFY_CLIENT_SECRET", "\"${property("spotify.client.secret")}\"")
+        buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"${localProps.getProperty("spotify.client.id", "")}\"")
+        buildConfigField("String", "SPOTIFY_CLIENT_SECRET", "\"${localProps.getProperty("spotify.client.secret", "")}\"")
     }
 
     buildTypes {
