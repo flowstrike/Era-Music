@@ -11,9 +11,9 @@ class EraApp : Application() {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
+        container.initNewPipe()
     }
 }
 
-/** Convenience accessor for the app-wide [AppContainer]. */
 val Context.appContainer: AppContainer
     get() = (applicationContext as EraApp).container

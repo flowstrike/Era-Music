@@ -5,13 +5,18 @@ import com.spyou.eramusic.data.MusicRepository
 import com.spyou.eramusic.data.PlaylistRepository
 import com.spyou.eramusic.data.SettingsStore
 import com.spyou.eramusic.data.db.EraDatabase
+import com.spyou.eramusic.data.download.SyncOrchestrator
+import com.spyou.eramusic.data.spotify.SpotifyAuthService
+import com.spyou.eramusic.data.spotify.SpotifyMetadataService
+import com.spyou.eramusic.data.youtube.NewPipeDownloader
+import com.spyou.eramusic.data.youtube.YouTubeDownloadService
 import com.spyou.eramusic.playback.PlayerConnection
 import com.spyou.eramusic.playback.SleepTimer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import org.schabi.newpipe.extractor.NewPipe
 
-/** Manual dependency container; one instance lives on [EraApp] for the process lifetime. */
 class AppContainer(context: Context) {
 
     private val appContext = context.applicationContext
@@ -23,4 +28,29 @@ class AppContainer(context: Context) {
     val settingsStore: SettingsStore by lazy { SettingsStore(appContext) }
     val playerConnection: PlayerConnection by lazy { PlayerConnection(appContext) }
     val sleepTimer: SleepTimer by lazy { SleepTimer(appScope) }
+
+    private val spotifyAuthService: SpotifyAuthService by lazy {
+        SpotifyAuthService(
+            BuildConfig.SPOTIFY_CLIENT_ID,
+            BuildConfig.SPOTIFY_CLIENT_SECRET,
+        )
+    }
+    private val spotifyMetadataService: SpotifyMetadataService by lazy {
+        SpotifyMetadataService(spotifyAuthService)
+    }
+    val youTubeDownloadService: YouTubeDownloadService by lazy {
+        YouTubeDownloadService(appContext)
+    }
+    val syncOrchestrator: SyncOrchestrator by lazy {
+        SyncOrchestrator(
+            spotifyMetadataService,
+            youTubeDownloadService,
+            database.downloadDao(),
+            appContext,
+        )
+    }
+
+    fun initNewPipe() {
+        NewPipe.init(NewPipeDownloader.instance)
+    }
 }
