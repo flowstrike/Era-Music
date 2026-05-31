@@ -20,6 +20,23 @@ class SpotifyMetadataService {
     companion object {
         private const val TAG = "SpotifyMetadata"
         private const val EMBED_BASE = "https://open.spotify.com/embed/playlist"
+        private const val OEMBED_BASE = "https://open.spotify.com/oembed?url=https://open.spotify.com/track"
+    }
+
+    private fun fetchTrackArtwork(trackId: String): String? {
+        return try {
+            val request = Request.Builder()
+                .url("$OEMBED_BASE/$trackId")
+                .build()
+            val response = client.newCall(request).execute()
+            if (!response.isSuccessful) return null
+            val json = response.body?.string() ?: return null
+            val oembed = gson.fromJson(json, OEmbedResponse::class.java)
+            oembed.thumbnailUrl
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to fetch artwork for track $trackId", e)
+            null
+        }
     }
 
     suspend fun fetchPlaylist(playlistId: String): SpotifyPlaylistInfo =
@@ -61,7 +78,7 @@ class SpotifyMetadataService {
                         artist = track.subtitle ?: "Unknown",
                         album = "",
                         durationMs = track.duration.toLong(),
-                        artworkUrl = null,
+                        artworkUrl = fetchTrackArtwork(trackId),
                     )
                 },
             )
@@ -109,4 +126,8 @@ private data class EmbedTrackResponse(
     val title: String,
     val subtitle: String?,
     val duration: Int,
+)
+
+private data class OEmbedResponse(
+    @SerializedName("thumbnail_url") val thumbnailUrl: String?,
 )

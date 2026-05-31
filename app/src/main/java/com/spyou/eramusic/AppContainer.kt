@@ -9,6 +9,7 @@ import com.spyou.eramusic.data.download.SyncOrchestrator
 import com.spyou.eramusic.data.spotify.SpotifyMetadataService
 import com.spyou.eramusic.data.youtube.NewPipeDownloader
 import com.spyou.eramusic.data.youtube.YouTubeDownloadService
+import com.spyou.eramusic.data.quotes.QuotesService
 import com.spyou.eramusic.playback.PlayerConnection
 import com.spyou.eramusic.playback.SleepTimer
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +28,7 @@ class AppContainer(context: Context) {
     val settingsStore: SettingsStore by lazy { SettingsStore(appContext) }
     val playerConnection: PlayerConnection by lazy { PlayerConnection(appContext) }
     val sleepTimer: SleepTimer by lazy { SleepTimer(appScope) }
+    val quotesService: QuotesService by lazy { QuotesService() }
 
     private val spotifyMetadataService: SpotifyMetadataService by lazy {
         SpotifyMetadataService()

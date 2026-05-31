@@ -32,6 +32,15 @@ android {
         buildConfigField("String", "SPOTIFY_CLIENT_SECRET", "\"${localProps.getProperty("spotify.client.secret", "")}\"")
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("${rootProject.projectDir}/era-release.jks")
+            storePassword = "eramusic2026"
+            keyAlias = "era"
+            keyPassword = "eramusic2026"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -39,6 +48,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {

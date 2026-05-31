@@ -17,6 +17,7 @@ class SettingsStore(context: Context) {
     private val sortKey = intPreferencesKey("sort_order")
     private val downloadsInitKey = booleanPreferencesKey("pref_downloads_initialized")
     private val lastSyncKey = longPreferencesKey("pref_last_sync_time")
+    private val darkModeKey = intPreferencesKey("pref_dark_mode")
 
     val sortOrder: Flow<SortOrder> = appContext.dataStore.data.map { prefs ->
         val ordinal = prefs[sortKey] ?: SortOrder.TITLE.ordinal
@@ -41,5 +42,16 @@ class SettingsStore(context: Context) {
 
     suspend fun setLastSyncTime(timeMs: Long) {
         appContext.dataStore.edit { it[lastSyncKey] = timeMs }
+    }
+
+    enum class DarkMode(val value: Int) { SYSTEM(0), LIGHT(1), DARK(2) }
+
+    val darkMode: Flow<DarkMode> = appContext.dataStore.data.map { prefs ->
+        val v = prefs[darkModeKey] ?: 0
+        DarkMode.entries.getOrElse(v) { DarkMode.SYSTEM }
+    }
+
+    suspend fun setDarkMode(mode: DarkMode) {
+        appContext.dataStore.edit { it[darkModeKey] = mode.value }
     }
 }

@@ -74,6 +74,13 @@ class SyncOrchestrator(
                     downloadDao.removeCrossRef(playlistId, trackId)
                 }
 
+                val existingTracks = spotifyPlaylist.tracks.filter { it.id in existingTrackIds }
+                for (track in existingTracks) {
+                    if (track.artworkUrl != null) {
+                        downloadDao.updateArtwork(track.id, track.artworkUrl)
+                    }
+                }
+
                 val newTracks = spotifyPlaylist.tracks.filter { it.id !in existingTrackIds }
                 for ((trackIdx, track) in newTracks.withIndex()) {
                     Log.d(TAG, "Downloading [${trackIdx + 1}/${newTracks.size}]: ${track.title} by ${track.artist}")

@@ -13,6 +13,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,7 +29,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.spyou.eramusic.appContainer
+import com.spyou.eramusic.data.SettingsStore
 import com.spyou.eramusic.data.download.DownloadProgress
+import com.spyou.eramusic.data.quotes.Quote
 import com.spyou.eramusic.ui.components.MiniPlayer
 import com.spyou.eramusic.ui.download.DownloadBanner
 import com.spyou.eramusic.ui.download.DownloadPromptBanner
@@ -40,6 +43,7 @@ import com.spyou.eramusic.ui.playlists.PlaylistsViewModel
 import com.spyou.eramusic.ui.playlists.SyncedPlaylistDetailScreen
 import com.spyou.eramusic.ui.songs.LibraryViewModel
 import com.spyou.eramusic.ui.songs.SongsScreen
+import kotlinx.coroutines.launch
 import java.net.URLEncoder
 
 private object Routes {
@@ -59,6 +63,7 @@ fun EraNavHost() {
     val context = LocalContext.current
     val container = remember { context.appContainer }
     val player = container.playerConnection
+    val scope = rememberCoroutineScope()
 
     val libraryViewModel: LibraryViewModel = viewModel(factory = LibraryViewModel.Factory)
     val playlistsViewModel: PlaylistsViewModel = viewModel(factory = PlaylistsViewModel.Factory)
@@ -72,12 +77,21 @@ fun EraNavHost() {
 
     val currentSongId by player.currentSongId.collectAsStateWithLifecycle()
     val favoriteIds by playlistsViewModel.favoriteIds.collectAsStateWithLifecycle()
+    val localPlaylists by playlistsViewModel.playlists.collectAsStateWithLifecycle()
     val downloadsInitialized by downloadViewModel.downloadsInitialized.collectAsStateWithLifecycle()
     val downloadProgress by downloadViewModel.progress.collectAsStateWithLifecycle()
     val syncedPlaylists by downloadViewModel.syncedPlaylists.collectAsStateWithLifecycle()
+    val darkMode by container.settingsStore.darkMode.collectAsStateWithLifecycle(
+        initialValue = SettingsStore.DarkMode.SYSTEM
+    )
 
     var downloadPromptDismissed by remember { mutableStateOf(false) }
     var downloadBannerDismissed by remember { mutableStateOf(false) }
+    var quote by remember { mutableStateOf<Quote?>(null) }
+
+    LaunchedEffect(Unit) {
+        quote = container.quotesService.fetchQuote()
+    }
 
     val showDownloadPrompt = !downloadsInitialized
             && !downloadPromptDismissed
@@ -152,6 +166,15 @@ fun EraNavHost() {
                     libraryViewModel = libraryViewModel,
                     playlistsViewModel = playlistsViewModel,
                     currentSongId = currentSongId,
+                    darkMode = darkMode,
+                    onDarkModeChange = { scope.launch { container.settingsStore.setDarkMode(it) } },
+                    syncedPlaylists = syncedPlaylists,
+                    localPlaylists = localPlaylists,
+                    onOpenPlaylist = { id -> navController.navigate(Routes.playlistDetail(id)) },
+                    onOpenSyncedPlaylist = { id, name ->
+                        navController.navigate(Routes.syncedPlaylistDetail(id, name))
+                    },
+                    quote = quote,
                 )
             }
             composable(Routes.PLAYLISTS) {

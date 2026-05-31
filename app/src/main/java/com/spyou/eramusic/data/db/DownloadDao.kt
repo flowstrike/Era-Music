@@ -54,6 +54,9 @@ interface DownloadDao {
     @Query("UPDATE downloaded_tracks SET isFavorite = NOT isFavorite WHERE spotifyId = :id")
     suspend fun toggleFavorite(id: String)
 
+    @Query("UPDATE downloaded_tracks SET artworkUrl = :url WHERE spotifyId = :id")
+    suspend fun updateArtwork(id: String, url: String?)
+
     @Query("SELECT isFavorite FROM downloaded_tracks WHERE spotifyId = :id")
     suspend fun isFavorite(id: String): Boolean?
 
